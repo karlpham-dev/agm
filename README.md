@@ -525,6 +525,8 @@ go build -o agm .
 
 ---
 
-## License
+## License & Attribution
 
-This project is open source and available under the terms of the [MIT License](./LICENSE).
+This project is derived and extended from [shyim/agm](https://github.com/shyim/agm) by [shyim](https://github.com/shyim).
+
+Released under the terms of the [MIT License](./LICENSE).
