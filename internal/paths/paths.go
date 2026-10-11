@@ -12,7 +12,6 @@ import (
 
 const DBName = "cloud_accounts.db"
 const MasterKeyFile = ".mk"
-const OAuthConfigFile = "oauth.json"
 
 // AgentDir is the local data directory for agm.
 // Override: AGM_DATA_DIR or ANTIGRAVITY_AGENT_DIR.
@@ -47,11 +46,6 @@ func CloudAccountsDBPath() string {
 // MasterKeyPath is where the standalone CLI stores its AES key (plain hex, mode 0600).
 func MasterKeyPath() string {
 	return filepath.Join(AgentDir(), MasterKeyFile)
-}
-
-// OAuthConfigPath is where the standalone CLI stores or reads local OAuth client credentials.
-func OAuthConfigPath() string {
-	return filepath.Join(AgentDir(), OAuthConfigFile)
 }
 
 // ElectronUserDataDirs returns legacy Antigravity Electron userData candidates (optional key sources).

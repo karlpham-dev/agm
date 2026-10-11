@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -20,53 +19,15 @@ import (
 )
 
 const (
-	userAgent   = "antigravity/1.11.3 Darwin/arm64"
-	urlToken    = "https://oauth2.googleapis.com/token"
-	urlAuth     = "https://accounts.google.com/o/oauth2/v2/auth"
-	urlUserInfo = "https://www.googleapis.com/oauth2/v2/userinfo"
-	urlQuota    = "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels"
-	urlProject  = "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist"
+	clientID     = "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com"
+	clientSecret = "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"
+	userAgent    = "antigravity/1.11.3 Darwin/arm64"
+	urlToken     = "https://oauth2.googleapis.com/token"
+	urlAuth      = "https://accounts.google.com/o/oauth2/v2/auth"
+	urlUserInfo  = "https://www.googleapis.com/oauth2/v2/userinfo"
+	urlQuota     = "https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels"
+	urlProject   = "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist"
 )
-
-// OAuthConfig holds Google OAuth client credentials.
-type OAuthConfig struct {
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-}
-
-// LoadOAuthConfig resolves OAuth client credentials from environment variables (AGM_CLIENT_ID / AGM_CLIENT_SECRET)
-// or the local config file ~/.antigravity-agent/oauth.json.
-func LoadOAuthConfig() (OAuthConfig, error) {
-	cid := strings.TrimSpace(os.Getenv("AGM_CLIENT_ID"))
-	csec := strings.TrimSpace(os.Getenv("AGM_CLIENT_SECRET"))
-	if cid == "" {
-		cid = strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_ID"))
-	}
-	if csec == "" {
-		csec = strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_SECRET"))
-	}
-	if cid != "" && csec != "" {
-		return OAuthConfig{ClientID: cid, ClientSecret: csec}, nil
-	}
-
-	cfgPath := paths.OAuthConfigPath()
-	if data, err := os.ReadFile(cfgPath); err == nil {
-		var cfg OAuthConfig
-		if err := json.Unmarshal(data, &cfg); err == nil {
-			if cid == "" {
-				cid = strings.TrimSpace(cfg.ClientID)
-			}
-			if csec == "" {
-				csec = strings.TrimSpace(cfg.ClientSecret)
-			}
-		}
-	}
-
-	if cid == "" || csec == "" {
-		return OAuthConfig{}, fmt.Errorf("Google OAuth credentials not configured. Please create %s or set AGM_CLIENT_ID and AGM_CLIENT_SECRET", paths.OAuthConfigPath())
-	}
-	return OAuthConfig{ClientID: cid, ClientSecret: csec}, nil
-}
 
 var oauthScopes = strings.Join([]string{
 	"https://www.googleapis.com/auth/cloud-platform",
@@ -99,13 +60,12 @@ type UserInfo struct {
 
 // AuthURL builds the Google OAuth authorization URL for the given redirect.
 func AuthURL(redirectURI string) string {
-	cfg, _ := LoadOAuthConfig()
 	params := url.Values{}
 	params.Set("access_type", "offline")
 	params.Set("scope", oauthScopes)
 	params.Set("prompt", "consent")
 	params.Set("response_type", "code")
-	params.Set("client_id", cfg.ClientID)
+	params.Set("client_id", clientID)
 	params.Set("redirect_uri", redirectURI)
 	params.Set("include_granted_scopes", "true")
 	return urlAuth + "?" + params.Encode()
@@ -113,13 +73,9 @@ func AuthURL(redirectURI string) string {
 
 // ExchangeCode swaps an auth code for tokens.
 func ExchangeCode(code, redirectURI string) (*TokenResponse, error) {
-	cfg, err := LoadOAuthConfig()
-	if err != nil {
-		return nil, err
-	}
 	form := url.Values{}
-	form.Set("client_id", cfg.ClientID)
-	form.Set("client_secret", cfg.ClientSecret)
+	form.Set("client_id", clientID)
+	form.Set("client_secret", clientSecret)
 	form.Set("code", code)
 	form.Set("redirect_uri", redirectURI)
 	form.Set("grant_type", "authorization_code")
@@ -174,9 +130,6 @@ func FetchUserInfo(accessToken string) (*UserInfo, error) {
 
 // LoginInteractive runs a local OAuth callback server, opens the browser, and returns tokens + profile.
 func LoginInteractive(onURL func(authURL string)) (*TokenResponse, *UserInfo, error) {
-	if _, err := LoadOAuthConfig(); err != nil {
-		return nil, nil, err
-	}
 	ports := []int{8888, 8889, 8890, 8891, 8892}
 	var ln net.Listener
 	var port int
@@ -392,13 +345,9 @@ func ImportFromIDEPath(customPath string) (*db.Account, error) {
 
 // RefreshAccessToken refreshes an OAuth access token.
 func RefreshAccessToken(refreshToken string) (*TokenResponse, error) {
-	cfg, err := LoadOAuthConfig()
-	if err != nil {
-		return nil, err
-	}
 	form := url.Values{}
-	form.Set("client_id", cfg.ClientID)
-	form.Set("client_secret", cfg.ClientSecret)
+	form.Set("client_id", clientID)
+	form.Set("client_secret", clientSecret)
 	form.Set("refresh_token", refreshToken)
 	form.Set("grant_type", "refresh_token")
 
